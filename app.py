@@ -90,7 +90,10 @@ async def is_spam(content: str, spam_link_domains: List[str], redirectionDepth: 
     visited = {}
         
     while redirectionDepth >= 0:
-        futures = []                
+        futures = []   
+
+        # 중복 URL 제거
+        next_urls = list(dict.fromkeys(next_urls))
 
         for next_url in next_urls:            
             in_spam = check_url_in_domains(next_url, spam_link_domains)
@@ -104,10 +107,11 @@ async def is_spam(content: str, spam_link_domains: List[str], redirectionDepth: 
                 futures.append(asyncio.ensure_future(get_response(next_url)))
 
         responses = await asyncio.gather(*futures)
+        next_urls = []
         for response in responses:
             try:
                 response.raise_for_status()
-                next_urls = get_next_urls(response)
+                next_urls.extend(get_next_urls(response))                
             except:
                 continue
 
